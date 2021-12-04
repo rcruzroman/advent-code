@@ -33,7 +33,7 @@ public class BingoUtil {
 
   public void fillRowsBingoBoard(int row, List<String> numbers, BingoBoard bingoBoard) {
     for (int col = 0; col < 5; col++){
-      bingoBoard.getNumbers()[row][col] = new BingoElement(row, col, Integer.valueOf(numbers.get(col)));
+      bingoBoard.getNumbers()[row][col] = new BingoElement(Integer.valueOf(numbers.get(col)));
     }
   }
 
