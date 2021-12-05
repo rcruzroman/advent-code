@@ -1,9 +1,5 @@
 package com.rafael.twentyone;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 public class BingoBoard {
 
   public BingoElement[][] numbers = new BingoElement[5][5];
