@@ -1,5 +1,6 @@
 package adventcalendarcode;
 
+import com.rafael.twentyone.LanternFishForJoinUsingRecursion;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -7,9 +8,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 
 public class Day6 {
@@ -48,6 +51,28 @@ public class Day6 {
       contador++;
     }
     Assert.assertEquals(Long.valueOf("5934"), Long.valueOf(lanternFishs.size()));
+
+  }
+
+  @Test
+  public void calculateLanternFishParallelExample() throws IOException {
+    Path path = Paths.get("src/test/resources/day6dataexample.txt");
+    List<String> lanternFishsString = Arrays.asList(Files.readAllLines(path).get(0).split(","));
+    LinkedList<Integer> lanternFishs = lanternFishsString.stream().map(l -> Integer.valueOf(l)).collect(Collectors.toCollection(LinkedList::new));
+    LinkedList<Integer> auxList = new LinkedList<>();
+    ForkJoinPool forkJoinPool = new ForkJoinPool();
+
+    int contador = 0;
+    while(contador < 256) {
+      System.out.println("contador" + contador);
+      LanternFishForJoinUsingRecursion lanternFishForJoinUsingRecursion = new LanternFishForJoinUsingRecursion(lanternFishs, contador);
+      auxList = forkJoinPool.invoke(lanternFishForJoinUsingRecursion);
+      lanternFishs = auxList;
+      contador++;
+    }
+
+    Assert.assertEquals(Long.valueOf("26984457539"), Long.valueOf(lanternFishs.size()));
+
 
   }
 
