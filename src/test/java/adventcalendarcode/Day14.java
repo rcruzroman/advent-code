@@ -12,172 +12,84 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Day14 {
 
-    @Test
-    public void part1Example() throws IOException {
-        Path path = Paths.get("src/test/resources/day14dataexample.txt");
-        List<String> inputData = Files.readAllLines(path);
+  @Test
+  public void part1Example() throws IOException {
+    Path path = Paths.get("src/test/resources/day14dataexample.txt");
+    List<String> inputData = Files.readAllLines(path);
+    Assert.assertEquals(Long.valueOf(1588), processTemplate(inputData.get(0), getInsertionRules(inputData), 10));
+  }
 
-        Map<String, String> insertionRules = getInsertionRules(inputData);
-        LinkedList<String> result = populateTemplate(inputData.get(0));
-        LinkedList<String> resultFinal = processTemplate(result, insertionRules, 10);
-        Map<String, Long> frequentChars = resultFinal.stream().collect(
-                Collectors.groupingBy(c -> c, Collectors.counting()));
+  @Test
+  public void part1() throws IOException {
+    Path path = Paths.get("src/test/resources/day14data.txt");
+    List<String> inputData = Files.readAllLines(path);
+    System.out.println("Total: " + processTemplate(inputData.get(0), getInsertionRules(inputData), 10));
 
-        Optional<Map.Entry<String, Long>> maxEntry =frequentChars.entrySet()
-                .stream()
-                .max((Map.Entry<String, Long> e1, Map.Entry<String, Long> e2) -> e1.getValue()
-                        .compareTo(e2.getValue())
-                );
-        Optional<Map.Entry<String, Long>> minEntry =frequentChars.entrySet()
-                .stream()
-                .max((Map.Entry<String, Long> e1, Map.Entry<String, Long> e2) -> e2.getValue()
-                        .compareTo(e1.getValue())
-                );
-        System.out.println(frequentChars);
-        System.out.println(maxEntry.get());
-        System.out.println(minEntry.get());
-        Assert.assertEquals(1588, maxEntry.get().getValue() - minEntry.get().getValue());
+  }
 
+  @Test
+  public void part2() throws IOException {
+    Path path = Paths.get("src/test/resources/day14data.txt");
+    List<String> inputData = Files.readAllLines(path);
+    System.out.println("Total: " + processTemplate(inputData.get(0), getInsertionRules(inputData), 40));
+  }
+
+  private Long processTemplate(String template, Map<String, String> insertionRules, int steps) {
+    Map<String, Long> pairValues = new HashMap<>();
+    Map<Character, Long> characters = new HashMap<>();
+    template.chars().forEach(c -> addToCharacters(characters, (char)c, null));
+
+    for (int i = 0; i < template.length() - 1; i++) {
+      addToMapPairs(pairValues, template.substring(i, i + 2), null);
     }
 
-    @Test
-    public void part1() throws IOException {
-        Path path = Paths.get("src/test/resources/day14data.txt");
-        List<String> inputData = Files.readAllLines(path);
-
-        Map<String, String> insertionRules = getInsertionRules(inputData);
-        LinkedList<String> result = populateTemplate(inputData.get(0));
-        LinkedList<String> resultFinal = processTemplate(result, insertionRules, 10);
-        Map<String, Long> frequentChars = resultFinal.stream().collect(
-                Collectors.groupingBy(c -> c, Collectors.counting()));
-
-        Optional<Map.Entry<String, Long>> maxEntry =frequentChars.entrySet()
-                .stream()
-                .max((Map.Entry<String, Long> e1, Map.Entry<String, Long> e2) -> e1.getValue()
-                        .compareTo(e2.getValue())
-                );
-        Optional<Map.Entry<String, Long>> minEntry =frequentChars.entrySet()
-                .stream()
-                .max((Map.Entry<String, Long> e1, Map.Entry<String, Long> e2) -> e2.getValue()
-                        .compareTo(e1.getValue())
-                );
-        System.out.println(frequentChars);
-        System.out.println(maxEntry.get());
-        System.out.println(minEntry.get());
-        System.out.println("Total: " + (maxEntry.get().getValue() - minEntry.get().getValue()));
-
-    }
-
-    @Test
-    public void part2() throws IOException {
-        Path path = Paths.get("src/test/resources/day14data.txt");
-        List<String> inputData = Files.readAllLines(path);
-
-        Map<String, String> insertionRules = getInsertionRules(inputData);
-        LinkedList<String> result = populateTemplate(inputData.get(0));
-        LinkedList<String> resultFinal = processTemplateMultithreading(result, insertionRules, 40);
-        Map<String, Long> frequentChars = resultFinal.stream().collect(
-                Collectors.groupingBy(c -> c, Collectors.counting()));
-
-        Optional<Map.Entry<String, Long>> maxEntry =frequentChars.entrySet()
-                .stream()
-                .max((Map.Entry<String, Long> e1, Map.Entry<String, Long> e2) -> e1.getValue()
-                        .compareTo(e2.getValue())
-                );
-        Optional<Map.Entry<String, Long>> minEntry =frequentChars.entrySet()
-                .stream()
-                .max((Map.Entry<String, Long> e1, Map.Entry<String, Long> e2) -> e2.getValue()
-                        .compareTo(e1.getValue())
-                );
-        System.out.println(frequentChars);
-        System.out.println(maxEntry.get());
-        System.out.println(minEntry.get());
-        System.out.println("Total: " + (maxEntry.get().getValue() - minEntry.get().getValue()));
-
-    }
-
-    private LinkedList<String> processTemplate(LinkedList<String> result, Map<String, String> insertionRules, int numSteps) {
-
-        if(numSteps == 0){
-            return result;
+    for (int step = steps; step > 0; step--) {
+      Map<String, Long> newPairValues = new HashMap<>();
+      for (String singlePair : pairValues.keySet()) {
+        long increment = pairValues.get(singlePair);
+        if (insertionRules.containsKey(singlePair)) {
+          String key = insertionRules.get(singlePair);
+          addToCharacters(characters, key.charAt(0), increment);
+          addToMapPairs(newPairValues, singlePair.substring(0, 1) + key, increment);
+          addToMapPairs(newPairValues, key + singlePair.substring(1, 2), increment);
+        } else {
+          addToMapPairs(newPairValues, singlePair, increment);
         }
-        int position = 0;
-        String insertion;
-        LinkedList<String> tempResult = new LinkedList<>();
-        while(position < result.size()) {
-            String currentValue = result.get(position);
-            tempResult.add(currentValue);
-            if(position + 1 != result.size()){
-                insertion = insertionRules.get(currentValue + result.get(position + 1));
-                if(insertion != null){
-                    tempResult.add(insertion);
-                }
-            }
-            position++;
-        }
-        System.out.println("NumSteps:" + numSteps);
-        return processTemplate(tempResult, insertionRules, numSteps-1);
+      }
+      pairValues = newPairValues;
     }
 
-    private LinkedList<String> processTemplateMultithreading(LinkedList<String> result, Map<String, String> insertionRules, int numSteps) {
-        ExecutorService executor = Executors.newFixedThreadPool(6);
+    return characters.values().stream().mapToLong(l -> l).max().getAsLong() - characters.values().stream().mapToLong(l -> l).min().getAsLong();
 
-        //Create all CFs
-        List<CompletableFuture<LinkedList<String>>> futureList = result.stream()
-                .map(strings -> CompletableFuture.supplyAsync(() -> processList(strings, insertionRules), executor))
-                .collect(Collectors.toList());
+  }
 
-        //Wait for them all to complete
-        CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0])).join();
-        System.out.println("TEST");
-
-        //Do processing of the results
-//        List<CompletableFuture<LinkedList<String>>> joinResult = futureList.stream()
-//                .map(CompletableFuture::join);
-        return null;
-
+  private Map<String, String> getInsertionRules(List<String> inputData) {
+    Map<String, String> insertionRules = new HashMap<>();
+    for (String input : inputData) {
+      if (input.contains("->")) {
+        insertionRules.put(input.split("->")[0].trim(), input.split("->")[1].trim());
+      }
     }
+    return insertionRules;
+  }
 
-    private LinkedList<String> processList(String currentResult, Map<String, String> insertionRules) {
-        LinkedList<String> tempResult = new  LinkedList<>();
-        String insertion;
-        tempResult.add(currentResult);
-//        if(position + 1 != result.size()){
-            insertion = insertionRules.get(currentResult + "TEST");
-            if(insertion != null){
-                tempResult.add(insertion);
-            }
-//        }
-        return tempResult;
+  private Long addToMapPairs(Map<String, Long> pairLetters, String key, Long count) {
+    if (count != null) {
+      return pairLetters.put(key, pairLetters.containsKey(key) ? pairLetters.get(key) + count : count);
+    } else {
+      return pairLetters.put(key, pairLetters.containsKey(key) ? pairLetters.get(key) + 1 : 1);
     }
+  }
 
-    private Map<String, String> getInsertionRules(List<String> inputData) {
-        Map<String, String> insertionRules = new HashMap<>();
-        for (String input : inputData) {
-            if (input.contains("->")) {
-                insertionRules.put(input.split("->")[0].trim(), input.split("->")[1].trim());
-            }
-        }
-        return insertionRules;
+  private Long addToCharacters(Map<Character, Long> pairLetters, Character key, Long count) {
+    if (count != null) {
+      return pairLetters.put(key, pairLetters.containsKey(key) ? pairLetters.get(key) + count : count);
+    } else {
+      return pairLetters.put(key, pairLetters.containsKey(key) ? pairLetters.get(key) + 1 : 1);
     }
-
-    private LinkedList<String> populateTemplate(String template) {
-        LinkedList<String> result = new LinkedList<>();
-
-        int i = 0;
-        while (i < template.length()) {
-            result.add(template.substring(i, i + 1));
-            i++;
-        }
-        return result;
-    }
+  }
 }
